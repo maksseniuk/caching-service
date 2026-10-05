@@ -9,6 +9,8 @@ from caching_service.db import create_db_engine, init_db
 
 
 class CountingTransformer:
+    """Upper-cases like the real transformer, but records every call."""
+
     def __init__(self) -> None:
         self.calls: list[str] = []
 
@@ -19,6 +21,8 @@ class CountingTransformer:
 
 @pytest.fixture
 def engine(tmp_path: Path) -> Iterator[Engine]:
+    # A file database rather than :memory: so that every connection in the
+    # pool, and every thread FastAPI uses, sees the same data.
     engine = create_db_engine(f"sqlite:///{tmp_path / 'test.db'}")
     init_db(engine)
     yield engine

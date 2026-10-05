@@ -107,6 +107,8 @@ class TestPayloadService:
 
         with Session(engine) as session:
             service = PayloadService(session, transformer)
+            # Simulate losing the race: the lookup misses, then the insert
+            # collides with the row the other request already committed.
             original_find = service._find_by_hash
             lookups: list[str] = []
 
