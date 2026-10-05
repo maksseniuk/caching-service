@@ -1,0 +1,12 @@
+services:
+  cache-service:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      CACHE_SERVICE_TRANSFORMER_DELAY_SECONDS: "${TRANSFORMER_DELAY_SECONDS:-0.2}"
+    volumes:
+      - cache-data:/data
+
+volumes:
+  cache-data:
