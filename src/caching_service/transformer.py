@@ -1,5 +1,3 @@
-"""The "transformer function", standing in for a call to an external service."""
-
 import time
 from typing import Protocol
 
@@ -9,8 +7,6 @@ class Transformer(Protocol):
 
 
 class UppercaseTransformer:
-    """Upper-cases its input, optionally sleeping to mimic network latency."""
-
     def __init__(self, delay_seconds: float = 0.0) -> None:
         self._delay_seconds = delay_seconds
 
