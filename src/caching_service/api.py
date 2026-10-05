@@ -1,3 +1,5 @@
+"""HTTP API."""
+
 import uuid
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
@@ -28,6 +30,7 @@ ServiceDep = Annotated[PayloadService, Depends(get_service)]
 
 
 def create_app(settings: Settings | None = None, transformer: Transformer | None = None) -> FastAPI:
+    """Build the application; arguments let tests swap in their own database and transformer."""
     settings = settings or Settings()
 
     @asynccontextmanager
@@ -42,6 +45,8 @@ def create_app(settings: Settings | None = None, transformer: Transformer | None
 
     app = FastAPI(title="Caching Service", lifespan=lifespan)
 
+    # Endpoints are sync on purpose: the database driver and the transformer
+    # both block, so FastAPI runs them in its thread pool.
     @app.post(
         "/payload",
         response_model=PayloadCreated,

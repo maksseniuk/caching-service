@@ -1,8 +1,12 @@
+"""Request and response bodies of the HTTP API."""
+
 import uuid
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
+# Bounds keep a single request from monopolising the transformer and keep
+# cache keys small enough to index efficiently.
 MAX_ITEMS = 1000
 MAX_ITEM_LENGTH = 1000
 

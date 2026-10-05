@@ -1,3 +1,5 @@
+"""Command line arguments, parsed and validated by pydantic-settings."""
+
 import sys
 from pathlib import Path
 from typing import Literal, Self
@@ -9,6 +11,8 @@ from caching_service.schemas import PayloadCreate
 
 STDIO: Literal["-"] = "-"
 
+# Aliases exist only to name the metavars in --help (URL, N, FILE, JSON as in
+# the spec); pydantic-settings derives them from the annotation's name.
 type URL = HttpUrl
 type N = PositiveInt
 type FILE = Path | Literal["-"]
@@ -21,12 +25,15 @@ class InputError(ValueError):
 
 class CliSettings(BaseSettings):
     model_config = SettingsConfigDict(
+        # Without a prefix, unrelated variables such as HOST or INPUT in the
+        # caller's environment would silently become arguments.
         env_prefix="CACHE_CLI_",
         cli_prog_name="cache-cli",
         cli_kebab_case=True,
         cli_hide_none_type=True,
     )
 
+    # The spec gives -h to --host, so help is available as --help only.
     host: URL = Field(
         default=HttpUrl("http://localhost:8000"),
         validation_alias=AliasChoices("h", "host"),
@@ -42,6 +49,7 @@ class CliSettings(BaseSettings):
         validation_alias=AliasChoices("i", "input"),
         description='JSON file with "list_1" and "list_2" ("-" for stdin).',
     )
+    # Named json_input because a field called json would shadow BaseModel.json.
     json_input: JSON | None = Field(
         default=None,
         validation_alias=AliasChoices("j", "json"),
@@ -68,6 +76,8 @@ class CliSettings(BaseSettings):
             assert isinstance(self.input, Path)
             raw = self.input.read_text()
         try:
+            # Same model as the server, so bad input fails here instead of
+            # costing a round trip.
             return PayloadCreate.model_validate_json(raw)
         except ValidationError as error:
             raise InputError(f"invalid input: {describe(error)}") from error

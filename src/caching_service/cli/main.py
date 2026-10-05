@@ -1,3 +1,5 @@
+"""Entry point of ``cache-cli``."""
+
 import argparse
 import json
 import sys
@@ -15,6 +17,7 @@ from caching_service.schemas import PayloadCreate
 
 
 def parse_args(argv: Sequence[str]) -> CliSettings:
+    # argparse claims -h for help by default; the spec needs it for --host.
     parser = argparse.ArgumentParser(prog="cache-cli", add_help=False)
     parser.add_argument("--help", action="help", help="Show this message and exit.")
     source: CliSettingsSource[CliSettings] = CliSettingsSource(CliSettings, root_parser=parser)
@@ -22,6 +25,10 @@ def parse_args(argv: Sequence[str]) -> CliSettings:
 
 
 def run(request: PayloadCreate, repeat: int, client: httpx2.Client, out: TextIO) -> None:
+    """Create and read the payload ``repeat`` times, writing one JSON line per iteration.
+
+    Taking the client as an argument lets tests drive the real app in-process.
+    """
     body = request.model_dump()
     for iteration in range(1, repeat + 1):
         started = time.perf_counter()
@@ -38,10 +45,12 @@ def run(request: PayloadCreate, repeat: int, client: httpx2.Client, out: TextIO)
             "elapsed_ms": round((time.perf_counter() - started) * 1000, 2),
         }
         out.write(json.dumps(result, ensure_ascii=False) + "\n")
+        # Flushed per line so progress shows up live when piped or tailed.
         out.flush()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    # Exit codes: 2 for bad arguments or input (as argparse does), 1 for HTTP failures.
     try:
         settings = parse_args(sys.argv[1:] if argv is None else argv)
         request = settings.load_request()
